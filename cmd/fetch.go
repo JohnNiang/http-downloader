@@ -1,13 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"os"
 	"path"
 )
 
-func newFetchCmd() (cmd *cobra.Command) {
+func newFetchCmd(context.Context) (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use:   "fetch",
 		Short: "Fetch the latest hd config",

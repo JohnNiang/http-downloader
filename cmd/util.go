@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"context"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"sync"
@@ -17,6 +19,16 @@ func getOrDefault(key, def string, data map[string]string) (result string) {
 
 func getReplacement(key string, data map[string]string) (result string) {
 	return getOrDefault(key, key, data)
+}
+
+func getRoundTripper(ctx context.Context) (tripper *http.RoundTripper) {
+	roundTripper := ctx.Value("roundTripper")
+
+	var ok bool
+	if tripper, ok = roundTripper.(*http.RoundTripper); ok {
+		tripper = nil
+	}
+	return
 }
 
 func pathExists(path string) (bool, error) {

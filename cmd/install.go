@@ -3,6 +3,7 @@ package cmd
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"github.com/spf13/cobra"
 	"io"
@@ -15,8 +16,12 @@ import (
 )
 
 // NewInstallCmd returns the install command
-func NewInstallCmd() (cmd *cobra.Command) {
-	opt := &installOption{}
+func NewInstallCmd(ctx context.Context) (cmd *cobra.Command) {
+	opt := &installOption{
+		downloadOption: downloadOption{
+			RoundTripper: *getRoundTripper(ctx),
+		},
+	}
 	cmd = &cobra.Command{
 		Use:     "install",
 		PreRunE: opt.preRunE,

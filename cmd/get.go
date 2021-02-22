@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/linuxsuren/http-downloader/pkg"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"path"
 	"runtime"
@@ -16,8 +18,10 @@ import (
 )
 
 // NewGetCmd return the get command
-func NewGetCmd() (cmd *cobra.Command) {
-	opt := &downloadOption{}
+func NewGetCmd(ctx context.Context) (cmd *cobra.Command) {
+	opt := &downloadOption{
+		RoundTripper: *getRoundTripper(ctx),
+	}
 	cmd = &cobra.Command{
 		Use:     "get",
 		Short:   "download the file",
@@ -48,6 +52,7 @@ type downloadOption struct {
 	Output       string
 	ShowProgress bool
 	Fetch        bool
+	RoundTripper http.RoundTripper
 
 	ContinueAt int64
 
