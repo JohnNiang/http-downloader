@@ -4,10 +4,11 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
+	"github.com/linuxsuren/http-downloader/pkg/exec"
+	"github.com/linuxsuren/http-downloader/pkg/installer"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -64,66 +65,77 @@ func (o *installOption) runE(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 
-	targetBinary := o.name
-	if o.Package != nil && o.Package.TargetBinary != "" {
-		// this is the desired binary file
-		targetBinary = o.Package.TargetBinary
+	process := &installer.Installer{
+		Source:       o.downloadOption.Output,
+		Name:         o.name,
+		Package:      o.Package,
+		Tar:          o.Tar,
+		Output:       o.Output,
+		CleanPackage: o.CleanPackage,
 	}
-
-	var source string
-	var target string
-	tarFile := o.Output
-	if o.Tar {
-		if err = o.extractFiles(tarFile, o.name); err == nil {
-			source = fmt.Sprintf("%s/%s", filepath.Dir(tarFile), o.name)
-			target = fmt.Sprintf("/usr/local/bin/%s", targetBinary)
-		} else {
-			err = fmt.Errorf("cannot extract %s from tar file, error: %v", tarFile, err)
-		}
-	} else {
-		source = o.downloadOption.Output
-		target = fmt.Sprintf("/usr/local/bin/%s", targetBinary)
-	}
-
-	if err == nil {
-		if o.Package != nil && o.Package.PreInstall != nil {
-			if err = execCommand(o.Package.PreInstall.Cmd, o.Package.PreInstall.Args...); err != nil {
-				return
-			}
-		}
-
-		if o.Package != nil && o.Package.Installation != nil {
-			err = execCommand(o.Package.Installation.Cmd, o.Package.Installation.Args...)
-		} else {
-			err = o.overWriteBinary(source, target)
-		}
-
-		if err == nil && o.Package != nil && o.Package.PostInstall != nil {
-			err = execCommand(o.Package.PostInstall.Cmd, o.Package.PostInstall.Args...)
-		}
-
-		if err == nil && o.Package != nil && o.Package.TestInstall != nil {
-			err = execCommand(o.Package.TestInstall.Cmd, o.Package.TestInstall.Args...)
-		}
-
-		if err == nil && o.CleanPackage {
-			if cleanErr := os.RemoveAll(tarFile); cleanErr != nil {
-				cmd.Println("cannot remove file", tarFile, ", error:", cleanErr)
-			}
-		}
-	}
+	err = process.Install()
 	return
+
+	//targetBinary := o.name
+	//if o.Package != nil && o.Package.TargetBinary != "" {
+	//	// this is the desired binary file
+	//	targetBinary = o.Package.TargetBinary
+	//}
+	//
+	//var source string
+	//var target string
+	//tarFile := o.Output
+	//if o.Tar {
+	//	if err = o.extractFiles(tarFile, o.name); err == nil {
+	//		source = fmt.Sprintf("%s/%s", filepath.Dir(tarFile), o.name)
+	//		target = fmt.Sprintf("/usr/local/bin/%s", targetBinary)
+	//	} else {
+	//		err = fmt.Errorf("cannot extract %s from tar file, error: %v", tarFile, err)
+	//	}
+	//} else {
+	//	source = o.downloadOption.Output
+	//	target = fmt.Sprintf("/usr/local/bin/%s", targetBinary)
+	//}
+	//
+	//if err == nil {
+	//	if o.Package != nil && o.Package.PreInstall != nil {
+	//		if err = exec.ExecCommand(o.Package.PreInstall.Cmd, o.Package.PreInstall.Args...); err != nil {
+	//			return
+	//		}
+	//	}
+	//
+	//	if o.Package != nil && o.Package.Installation != nil {
+	//		err = exec.ExecCommand(o.Package.Installation.Cmd, o.Package.Installation.Args...)
+	//	} else {
+	//		err = o.overWriteBinary(source, target)
+	//	}
+	//
+	//	if err == nil && o.Package != nil && o.Package.PostInstall != nil {
+	//		err = exec.ExecCommand(o.Package.PostInstall.Cmd, o.Package.PostInstall.Args...)
+	//	}
+	//
+	//	if err == nil && o.Package != nil && o.Package.TestInstall != nil {
+	//		err = exec.ExecCommand(o.Package.TestInstall.Cmd, o.Package.TestInstall.Args...)
+	//	}
+	//
+	//	if err == nil && o.CleanPackage {
+	//		if cleanErr := os.RemoveAll(tarFile); cleanErr != nil {
+	//			cmd.Println("cannot remove file", tarFile, ", error:", cleanErr)
+	//		}
+	//	}
+	//}
+	//return
 }
 
 func (o *installOption) overWriteBinary(sourceFile, targetPath string) (err error) {
 	fmt.Println("install", sourceFile, "to", targetPath)
 	switch runtime.GOOS {
 	case "linux", "darwin":
-		if err = execCommand("chmod", "u+x", sourceFile); err != nil {
+		if err = exec.ExecCommand("chmod", "u+x", sourceFile); err != nil {
 			return
 		}
 
-		if err = execCommand("rm", "-rf", targetPath); err != nil {
+		if err = exec.ExecCommand("rm", "-rf", targetPath); err != nil {
 			return
 		}
 

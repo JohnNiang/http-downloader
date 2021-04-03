@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/linuxsuren/http-downloader/pkg/exec"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"os"
@@ -33,13 +34,13 @@ func fetchHomeConfig() (err error) {
 	}
 
 	if ok, _ := pathExists(configDir); ok {
-		err = execCommandInDir("git", configDir, "reset", "--hard", "origin/master")
+		err = exec.ExecCommandInDir("git", configDir, "reset", "--hard", "origin/master")
 		if err == nil {
-			err = execCommandInDir("git", configDir, "pull")
+			err = exec.ExecCommandInDir("git", configDir, "pull")
 		}
 	} else {
 		if err = os.MkdirAll(configDir, 0644); err == nil {
-			err = execCommand("git", "clone", "https://github.com/LinuxSuRen/hd-home", configDir)
+			err = exec.ExecCommand("git", "clone", "https://github.com/LinuxSuRen/hd-home", configDir)
 		}
 	}
 	return
